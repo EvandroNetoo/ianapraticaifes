@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Proposta - ProposalFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Nova Proposta</h1>
+    <p class="form-hint">Selecione o cliente, adicione os itens e defina um desconto opcional.</p>
+  </div>
+  <a href="/propostas" class="btn btn-secondary">← Voltar</a>
+</div>
+
+{% if not customers %}
+<div class="card empty-state">
+  <h3>Nenhum cliente cadastrado</h3>
+  <p>Antes de criar uma proposta, é necessário cadastrar pelo menos um cliente.</p>
+  <a href="/clientes" class="btn btn-primary">Cadastrar primeiro cliente</a>
+</div>
+{% else %}
+<form action="/propostas" method="POST" id="proposalForm">
+  <div class="card">
+    <h2 style="font-size: 1.15rem; margin-bottom: 1rem;">Dados Gerais</h2>
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="customer_id" class="form-label">Cliente *</label>
+        <select name="customer_id" id="customer_id" class="form-control" required>
+          <option value="">Selecione um cliente...</option>
+          {% for c in customers %}
+          <option value="{{ c.id }}" {% if selected_customer_id == c.id %}selected{% endif %}>
+            {{ c.name }} {% if c.company %}({{ c.company }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">Não encontrou o cliente? <a href="/clientes" target="_blank">Cadastrar novo</a></div>
+      </div>
+
+      <div class="form-group">
+        <label for="title" class="form-label">Título da Proposta *</label>
+        <input type="text" name="title" id="title" class="form-control" placeholder="Ex.: Desenvolvimento de Website Institucional" required value="{{ prefill_title or '' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 style="font-size: 1.15rem;">Itens da Proposta *</h2>
+      <button type="button" id="addItemBtn" class="btn btn-secondary btn-sm">+ Adicionar Item</button>
+    </div>
+
+    <div class="table-responsive">
+      <table id="itemsTable">
+        <thead>
+          <tr>
+            <th style="width: 45%;">Descrição *</th>
+            <th style="width: 20%;">Quantidade *</th>
+            <th style="width: 25%;">Preço Unitário (R$) *</th>
+            <th style="width: 10%;">Ação</th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody">
+          <tr class="item-row">
+            <td>
+              <input type="text" name="item_description" class="form-control item-desc" placeholder="Ex: Consultoria técnica" required>
+            </td>
+            <td>
+              <input type="number" name="item_quantity" class="form-control item-qty" step="0.01" min="0.01" value="1" required>
+            </td>
+            <td>
+              <input type="number" name="item_unit_price" class="form-control item-price" step="0.01" min="0.01" placeholder="0.00" required>
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="btn btn-danger btn-sm remove-item-btn" title="Remover item" style="padding: 0.25rem 0.6rem;">&times;</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+      <div style="width: 320px;">
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+          <label for="discount_percent" class="form-label" style="margin-bottom: 0;">Desconto (%):</label>
+          <input type="number" name="discount_percent" id="discount_percent" class="form-control" style="width: 120px;" step="0.01" min="0" max="100" value="0.00">
+        </div>
+
+        <div class="totals-summary">
+          <div class="total-row">
+            <span>Subtotal estimado:</span>
+            <span id="previewSubtotal">R$ 0,00</span>
+          </div>
+          <div class="total-row" style="color: var(--danger);">
+            <span>Desconto estimado:</span>
+            <span id="previewDiscount">R$ 0,00</span>
+          </div>
+          <div class="total-row grand-total">
+            <span>Total estimado:</span>
+            <span id="previewTotal">R$ 0,00</span>
+          </div>
+          <p class="form-hint" style="text-align: right; margin-top: 0.25rem;">
+            O cálculo definitivo e seguro é processado no servidor.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+    <a href="/propostas" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary">Salvar Proposta (Rascunho)</button>
+  </div>
+</form>
+
+<script>
+  function formatMoney(amount) {
+    return Number(amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function updateTotals() {
+    let subtotal = 0;
+    const rows = document.querySelectorAll('.item-row');
+    rows.forEach(row => {
+      const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+      const price = parseFloat(row.querySelector('.item-price').value) || 0;
+      if (qty > 0 && price > 0) {
+        subtotal += qty * price;
+      }
+    });
+
+    const discountPercent = parseFloat(document.getElementById('discount_percent').value) || 0;
+    const discountAmount = subtotal * (discountPercent / 100);
+    const total = Math.max(0, subtotal - discountAmount);
+
+    document.getElementById('previewSubtotal').textContent = formatMoney(subtotal);
+    document.getElementById('previewDiscount').textContent = formatMoney(discountAmount);
+    document.getElementById('previewTotal').textContent = formatMoney(total);
+  }
+
+  document.getElementById('addItemBtn').addEventListener('click', () => {
+    const tbody = document.getElementById('itemsBody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'item-row';
+    newRow.innerHTML = `
+      <td>
+        <input type="text" name="item_description" class="form-control item-desc" placeholder="Ex: Novo serviço" required>
+      </td>
+      <td>
+        <input type="number" name="item_quantity" class="form-control item-qty" step="0.01" min="0.01" value="1" required>
+      </td>
+      <td>
+        <input type="number" name="item_unit_price" class="form-control item-price" step="0.01" min="0.01" placeholder="0.00" required>
+      </td>
+      <td style="text-align: center;">
+        <button type="button" class="btn btn-danger btn-sm remove-item-btn" title="Remover item" style="padding: 0.25rem 0.6rem;">&times;</button>
+      </td>
+    `;
+    tbody.appendChild(newRow);
+    attachRowEvents(newRow);
+    updateTotals();
+  });
+
+  function attachRowEvents(row) {
+    row.querySelectorAll('input').forEach(input => {
+      input.addEventListener('input', updateTotals);
+    });
+    row.querySelector('.remove-item-btn').addEventListener('click', () => {
+      const rows = document.querySelectorAll('.item-row');
+      if (rows.length > 1) {
+        row.remove();
+        updateTotals();
+      } else {
+        alert('A proposta deve ter pelo menos um item.');
+      }
+    });
+  }
+
+  document.querySelectorAll('.item-row').forEach(attachRowEvents);
+  document.getElementById('discount_percent').addEventListener('input', updateTotals);
+  updateTotals();
+</script>
+{% endif %}
+{% endblock %}

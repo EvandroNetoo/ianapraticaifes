@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ProposalFlow{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/propostas" class="brand">
+      <span>📄 ProposalFlow</span>
+    </a>
+    <div class="nav-links">
+      <a href="/propostas" class="nav-link {% if active_nav == 'proposals' %}active{% endif %}">Propostas</a>
+      <a href="/clientes" class="nav-link {% if active_nav == 'customers' %}active{% endif %}">Clientes</a>
+      <a href="/propostas/nova" class="btn btn-primary btn-sm">+ Nova Proposta</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    {% if message %}
+    <div class="alert alert-success">{{ message }}</div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

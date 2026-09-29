@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Proposta #{{ proposal.id }} - ProposalFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <h1 class="page-title">{{ proposal.title }}</h1>
+      <span class="badge badge-{{ proposal.status }}">{{ proposal.status }}</span>
+    </div>
+    <p class="form-hint">Proposta #{{ proposal.id }} &bull; Criada em {{ proposal.created_at.strftime('%d/%m/%Y às %H:%M') if proposal.created_at else '-' }}</p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <a href="/propostas" class="btn btn-secondary">← Lista de Propostas</a>
+  </div>
+</div>
+
+{% if proposal.status == 'rascunho' %}
+<div class="card" style="background-color: var(--warning-bg); border-color: #fde68a;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h3 style="color: #92400e; margin-bottom: 0.25rem;">Esta proposta está em rascunho</h3>
+      <p style="color: #78350f; font-size: 0.9rem;">
+        Ao enviar a proposta, um link público seguro será gerado para que o cliente possa avaliar e decidir (aceitar ou recusar).
+      </p>
+    </div>
+    <form action="/propostas/{{ proposal.id }}/enviar" method="POST">
+      <button type="submit" class="btn btn-primary">✉ Enviar Proposta ao Cliente</button>
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="card" style="background-color: var(--primary-light); border-color: #bfdbfe;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div style="flex: 1; min-width: 280px;">
+      <h3 style="color: #1e40af; margin-bottom: 0.25rem;">Link público do cliente</h3>
+      <p style="color: #1e3a8a; font-size: 0.85rem; margin-bottom: 0.5rem;">
+        Compartilhe este link com o cliente para visualização e decisão:
+      </p>
+      <input type="text" id="publicUrlInput" class="form-control" readonly value="{{ public_url }}" style="background: white; font-family: monospace; font-size: 0.85rem;">
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('publicUrlInput').value); alert('Link copiado!');">
+        Copiar link
+      </button>
+      <a href="{{ public_url }}" target="_blank" class="btn btn-primary btn-sm">
+        Abrir como cliente ↗
+      </a>
+    </div>
+  </div>
+  {% if proposal.sent_at %}
+  <div style="margin-top: 0.75rem; font-size: 0.8rem; color: #3b82f6;">
+    Enviada em: {{ proposal.sent_at.strftime('%d/%m/%Y às %H:%M') }}
+    {% if proposal.decided_at %}
+    &bull; Decisão registrada em: {{ proposal.decided_at.strftime('%d/%m/%Y às %H:%M') }}
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="card">
+    <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Dados do Cliente</h2>
+    <p><strong>Nome:</strong> {{ proposal.customer.name }}</p>
+    {% if proposal.customer.company %}
+    <p><strong>Empresa:</strong> {{ proposal.customer.company }}</p>
+    {% endif %}
+    {% if proposal.customer.email %}
+    <p><strong>E-mail:</strong> {{ proposal.customer.email }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Status e Acompanhamento</h2>
+    <p><strong>Status atual:</strong> <span class="badge badge-{{ proposal.status }}">{{ proposal.status }}</span></p>
+    <p><strong>Criada em:</strong> {{ proposal.created_at.strftime('%d/%m/%Y %H:%M') if proposal.created_at else '-' }}</p>
+    <p><strong>Data de Envio:</strong> {{ proposal.sent_at.strftime('%d/%m/%Y %H:%M') if proposal.sent_at else 'Ainda não enviada' }}</p>
+    <p><strong>Data de Decisão:</strong> {{ proposal.decided_at.strftime('%d/%m/%Y %H:%M') if proposal.decided_at else 'Pendente de resposta' }}</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Itens da Proposta</h2>
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Descrição</th>
+          <th style="text-align: right;">Quantidade</th>
+          <th style="text-align: right;">Preço Unitário</th>
+          <th style="text-align: right;">Total do Item</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in proposal.items %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td><strong>{{ item.description }}</strong></td>
+          <td style="text-align: right;">{{ item.quantity }}</td>
+          <td style="text-align: right;">{{ format_currency(item.unit_price) }}</td>
+          <td style="text-align: right;"><strong>{{ format_currency(item.total_price) }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="totals-summary">
+    <div class="total-row">
+      <span>Subtotal:</span>
+      <span>{{ format_currency(proposal.subtotal) }}</span>
+    </div>
+    {% if proposal.discount_percent > 0 %}
+    <div class="total-row" style="color: var(--danger);">
+      <span>Desconto ({{ proposal.discount_percent }}%):</span>
+      <span>- {{ format_currency(proposal.discount_amount) }}</span>
+    </div>
+    {% endif %}
+    <div class="total-row grand-total">
+      <span>Total:</span>
+      <span>{{ format_currency(proposal.total) }}</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

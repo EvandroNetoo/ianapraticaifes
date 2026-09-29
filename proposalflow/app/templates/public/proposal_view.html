@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ proposal.title }} - Proposta Comercial</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="public-container">
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    {% if message %}
+    <div class="alert alert-success">{{ message }}</div>
+    {% endif %}
+
+    <div class="public-card">
+      <div class="public-header">
+        <div>
+          <span style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-500); font-weight: 600;">
+            Proposta Comercial
+          </span>
+          <h1 style="font-size: 1.75rem; color: var(--slate-900); margin-top: 0.25rem;">
+            {{ proposal.title }}
+          </h1>
+          <p style="color: var(--slate-700); margin-top: 0.5rem; font-size: 1rem;">
+            Apresentada para: <strong>{{ proposal.customer.name }}</strong>
+            {% if proposal.customer.company %}
+            &bull; {{ proposal.customer.company }}
+            {% endif %}
+          </p>
+        </div>
+        <div>
+          <span class="badge badge-{{ proposal.status }}" style="font-size: 0.85rem; padding: 0.35rem 0.85rem;">
+            {{ proposal.status }}
+          </span>
+        </div>
+      </div>
+
+      {% if proposal.status == 'aceita' %}
+      <div class="public-banner public-banner-aceita">
+        <span>✓</span>
+        <div>
+          <strong>Proposta Aceita!</strong>
+          <div>Esta proposta comercial foi aceita{% if proposal.decided_at %} em {{ proposal.decided_at.strftime('%d/%m/%Y às %H:%M') }}{% endif %}. Agradecemos a parceria!</div>
+        </div>
+      </div>
+      {% elif proposal.status == 'recusada' %}
+      <div class="public-banner public-banner-recusada">
+        <span>✕</span>
+        <div>
+          <strong>Proposta Recusada</strong>
+          <div>Esta proposta foi recusada{% if proposal.decided_at %} em {{ proposal.decided_at.strftime('%d/%m/%Y às %H:%M') }}{% endif %}.</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        Por favor, revise os itens e condições abaixo para registrar sua decisão.
+      </div>
+      {% endif %}
+
+      <div style="margin: 2rem 0;">
+        <h2 style="font-size: 1.15rem; margin-bottom: 1rem; color: var(--slate-800);">Escopo e Itens</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Descrição</th>
+                <th style="text-align: right;">Quantidade</th>
+                <th style="text-align: right;">Preço Unitário</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in proposal.items %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td><strong>{{ item.description }}</strong></td>
+                <td style="text-align: right;">{{ item.quantity }}</td>
+                <td style="text-align: right;">{{ format_currency(item.unit_price) }}</td>
+                <td style="text-align: right;"><strong>{{ format_currency(item.total_price) }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="totals-summary">
+          <div class="total-row">
+            <span>Subtotal:</span>
+            <span>{{ format_currency(proposal.subtotal) }}</span>
+          </div>
+          {% if proposal.discount_percent > 0 %}
+          <div class="total-row" style="color: var(--danger);">
+            <span>Desconto ({{ proposal.discount_percent }}%):</span>
+            <span>- {{ format_currency(proposal.discount_amount) }}</span>
+          </div>
+          {% endif %}
+          <div class="total-row grand-total">
+            <span>Valor Total:</span>
+            <span>{{ format_currency(proposal.total) }}</span>
+          </div>
+        </div>
+      </div>
+
+      {% if proposal.status == 'enviada' %}
+      <div class="public-actions">
+        <form action="/p/{{ proposal.public_token }}/aceitar" method="POST" style="flex: 1;" onsubmit="return confirm('Deseja realmente aceitar esta proposta comercial?');">
+          <button type="submit" class="btn btn-success" style="width: 100%; padding: 0.85rem; font-size: 1.05rem;">
+            ✓ Aceitar Proposta
+          </button>
+        </form>
+
+        <form action="/p/{{ proposal.public_token }}/recusar" method="POST" style="flex: 1;" onsubmit="return confirm('Deseja realmente recusar esta proposta comercial?');">
+          <button type="submit" class="btn btn-danger" style="width: 100%; padding: 0.85rem; font-size: 1.05rem;">
+            ✕ Recusar Proposta
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <footer style="text-align: center; margin-top: 2rem; color: var(--slate-500); font-size: 0.85rem;">
+      Documento gerado por ProposalFlow &bull; Seguro e confidencial
+    </footer>
+  </div>
+</body>
+</html>

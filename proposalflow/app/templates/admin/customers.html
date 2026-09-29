@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - ProposalFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Clientes</h1>
+    <p class="form-hint">Gerencie seus clientes para associá-los a propostas comerciais.</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="card">
+      <h2 style="font-size: 1.15rem; margin-bottom: 1rem;">Novo Cliente</h2>
+      <form action="/clientes" method="POST">
+        <div class="form-group">
+          <label for="name" class="form-label">Nome completo *</label>
+          <input type="text" name="name" id="name" class="form-control" placeholder="Ex.: Ana Silva" required>
+        </div>
+
+        <div class="form-group">
+          <label for="company" class="form-label">Empresa (opcional)</label>
+          <input type="text" name="company" id="company" class="form-control" placeholder="Ex.: Acme Corp">
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">E-mail (opcional)</label>
+          <input type="email" name="email" id="email" class="form-control" placeholder="Ex.: ana@exemplo.com">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Cadastrar Cliente</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <h2 style="font-size: 1.15rem; padding: 1.25rem 1.25rem 0.5rem 1.25rem;">Clientes Cadastrados</h2>
+      {% if customers %}
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Empresa</th>
+              <th>E-mail</th>
+              <th>Propostas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in customers %}
+            <tr>
+              <td><strong>{{ c.name }}</strong></td>
+              <td>{{ c.company or '-' }}</td>
+              <td>{{ c.email or '-' }}</td>
+              <td>
+                <span class="badge badge-rascunho">{{ c.proposals|length }}</span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding: 2rem 1rem;">
+        <p>Nenhum cliente cadastrado ainda. Use o formulário ao lado para cadastrar o primeiro.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

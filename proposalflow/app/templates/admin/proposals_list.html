@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Propostas - ProposalFlow{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Propostas Comerciais</h1>
+    <p class="form-hint">Acompanhe a criação, envio e decisão de suas propostas.</p>
+  </div>
+  <a href="/propostas/nova" class="btn btn-primary">+ Criar Proposta</a>
+</div>
+
+{% if proposals %}
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Título</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Criada em</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for prop in proposals %}
+        <tr>
+          <td>#{{ prop.id }}</td>
+          <td>
+            <strong>{{ prop.customer.name }}</strong>
+            {% if prop.customer.company %}
+            <br><small class="form-hint">{{ prop.customer.company }}</small>
+            {% endif %}
+          </td>
+          <td>{{ prop.title }}</td>
+          <td><strong>{{ format_currency(prop.total) }}</strong></td>
+          <td>
+            <span class="badge badge-{{ prop.status }}">{{ prop.status }}</span>
+          </td>
+          <td>{{ prop.created_at.strftime('%d/%m/%Y %H:%M') if prop.created_at else '-' }}</td>
+          <td>
+            <a href="/propostas/{{ prop.id }}" class="btn btn-secondary btn-sm">Ver detalhes</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card empty-state">
+  <h3>Nenhuma proposta encontrada</h3>
+  <p>Você ainda não criou propostas comerciais. O fluxo começa cadastrando clientes e criando itens.</p>
+  <a href="/propostas/nova" class="btn btn-primary">Criar primeira proposta</a>
+</div>
+{% endif %}
+{% endblock %}
